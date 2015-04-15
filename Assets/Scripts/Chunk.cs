@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -8,6 +9,7 @@ public class Chunk : MonoBehaviour
 {
 	[SerializeField][HideInInspector]
 	int 				_height;
+
 	[SerializeField][HideInInspector]
 	int 				_width;
 
@@ -34,20 +36,16 @@ public class Chunk : MonoBehaviour
 		public List<Color32> 	colors;
 		public List<Vector2> 	uvs;
 
-		public void Init()
+		public void Init(int meshCount)
 		{
 			vertices = 		new List<Vector3>();
 			// normals = 		new List<Vector3>(); using _mesh.RecalculateNormals
-			triangles = 	new List<int>[1];
-			triangles[0] = 	new List<int>();
+			triangles = 	new List<int>[meshCount];
+			for (int i = 0; i < meshCount; i++)
+				triangles[i] = 	new List<int>();
 			colors = 		new List<Color32>();
 			uvs =			new List<Vector2>();
 		}
-	}
-
-	void OnDestroy()
-	{
-		DestroyImmediate(_mesh);
 	}
 
 	void Awake () 
@@ -60,6 +58,17 @@ public class Chunk : MonoBehaviour
 			_mesh.name = "mesh" + _chunkGridOffset;
 			_meshFilter.sharedMesh = _mesh;
 		}
+
+		// event is bound in BindMap on asset creation and on Awake after serialization.
+		if (_hexTerrain != null)
+			_hexTerrain.Types.MaterialModified += OnMaterialModified;
+	}
+
+	void OnDestroy()
+	{
+		_hexTerrain.Types.MaterialModified -= OnMaterialModified;
+
+		DestroyImmediate(_mesh);
 	}
 
 	void GenerateGeometry()
@@ -67,7 +76,7 @@ public class Chunk : MonoBehaviour
 		//Debug.Log("Generate geometry " + gameObject.name + ".");
 
 		MeshData meshData = new MeshData();
-		meshData.Init();
+		meshData.Init(_hexTerrain.Types.Count);
 
 		for (int yi = 0; yi < _height; yi++)
 		{
@@ -78,7 +87,10 @@ public class Chunk : MonoBehaviour
 					if (_hexTerrain.HexData[yi + _chunkGridOffset.y, xi + _chunkGridOffset.x] != null)
 					{
 						Vector2i coordinate = new Vector2i(xi, yi);
-						_hexTerrain.HexData[yi + _chunkGridOffset.y, xi + _chunkGridOffset.x].AddToChunk(ref meshData, Vector3.zero, coordinate, HexagonUtils.GetNeighbours(coordinate + _chunkGridOffset, _hexTerrain.HexData));
+						Hexagon hexa = _hexTerrain.HexData[yi + _chunkGridOffset.y, xi + _chunkGridOffset.x];
+						hexa.AddToChunk(ref meshData, Vector3.zero, coordinate, 
+							           	HexagonUtils.GetNeighbours(coordinate + _chunkGridOffset, _hexTerrain.HexData),
+						                _hexTerrain.Types[hexa.TypeID]);
 					}
               	}
 			}
@@ -114,6 +126,14 @@ public class Chunk : MonoBehaviour
 		_chunkGridOffset = chunkGridOffset;
 		_width = size.x;
 		_height = size.y;
+
+		// event is bound in BindMap on asset creation and on Awake after serialization.
+		_hexTerrain.Types.MaterialModified += OnMaterialModified;
+	}
+
+	private void OnMaterialModified(object sender, EventArgs e)
+	{
+		GetComponent<Renderer>().sharedMaterials = _hexTerrain.Types.GetMaterials();
 	}
 }
 

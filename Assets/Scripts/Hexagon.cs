@@ -10,22 +10,15 @@ public class Hexagon
 	public const float Width = 1.0f;
 
 	[SerializeField]
-	private Color 	_surfaceColor;
-	[SerializeField]
-	private int	 	_materialID;
+	private int 	_typeID;
+
 	[SerializeField]
 	private float	_height;
 
-	public Color 	SurfaceColor 
+	public int 		TypeID 
 	{
-		get { return _surfaceColor; }
-		set { _surfaceColor = value; }
-	}
-
-	public int 	MaterialID 
-	{
-		get { return _materialID; }
-		set { _materialID = value; }
+		get { return _typeID; }
+		set { _typeID = value; }
 	}
 
 	public float 	Height 
@@ -36,14 +29,13 @@ public class Hexagon
 
 	#region Constructors
 
-	/// <summary>Constructor used by Unity's serialization system</summary>
+	/// <summary>Constructor used by Unity's serialization system.</summary>
 	public Hexagon() {}
 
-	/// <summary>Constructor used on asset creation</summary>
-	public Hexagon(Color color, int materialID)
+	/// <summary>Constructor used on asset creation.</summary>
+	public Hexagon(int typeID)
 	{
-		_surfaceColor = color;
-		_materialID = materialID;
+		_typeID = typeID;
 	}
 
 	#endregion
@@ -57,16 +49,17 @@ public class Hexagon
 	/// <param name="chunkOffSet">world offset of the parent chunk </param>
 	/// <param name="coordinate">2d grid coordinate of this hexa relative to its chunk </param>
 	/// <param name="neighbours"> Array containing the 6 neighbours of this hex, some can be null</param>
-	public void AddToChunk(ref Chunk.MeshData meshData, Vector3 chunkOffSet, Vector2i coordinate, Hexagon[] neighbours)
+	public void AddToChunk(ref Chunk.MeshData meshData, Vector3 chunkOffSet, Vector2i coordinate, 
+	                       Hexagon[] neighbours, HexagonType type)
 	{
 		// Compute hexagon position.
 		Vector3 coordinateOffset = HexagonUtils.ConvertHexaSpaceToOrthonormal(coordinate) + chunkOffSet;
 
-		GenerateTop(ref meshData, coordinateOffset);
+		GenerateTop(ref meshData, coordinateOffset, type);
 		for (int i = 0; i < 6; i++)
 		{
 			if (neighbours[i] == null || neighbours[i].Height < this.Height + 0.05f)
-				GenerateSide(ref meshData, coordinateOffset, i, neighbours[i]);
+				GenerateSide(ref meshData, coordinateOffset, i, neighbours[i], type);
 		}
 	}
 
@@ -74,7 +67,7 @@ public class Hexagon
 
 	#region Private methods
 
-	void GenerateTop(ref Chunk.MeshData meshData, Vector3 coordinateOffset)
+	void GenerateTop(ref Chunk.MeshData meshData, Vector3 coordinateOffset, HexagonType type)
 	{
 		// Get referential vertice.
 		int verticesOffset = meshData.vertices.Count;
@@ -85,19 +78,20 @@ public class Hexagon
 			          new Vector3(positionsLookup[i, 0] * Width + coordinateOffset.x, 
 			            Height + coordinateOffset.y, 
 					              positionsLookup[i, 1] * Lentgh + coordinateOffset.z),
-			          new Vector2(topUVsLookup[i, 0], topUVsLookup[i, 1]));
+			          new Vector2(topUVsLookup[i, 0], topUVsLookup[i, 1]),
+			          type);
 		}
 		
 		// triangles
 		for (int i = 0; i < topTrianglesLookup.GetLength(0); i++)
 		{
-			meshData.triangles[MaterialID].Add(verticesOffset + topTrianglesLookup[i, 0]);
-			meshData.triangles[MaterialID].Add(verticesOffset + topTrianglesLookup[i, 1]);
-			meshData.triangles[MaterialID].Add(verticesOffset + topTrianglesLookup[i, 2]);
+			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 0]);
+			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 1]);
+			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 2]);
 		}
 	}
 
-	void GenerateSide(ref Chunk.MeshData meshData, Vector3 coordinateOffset, int faceIndex, Hexagon neighbour)
+	void GenerateSide(ref Chunk.MeshData meshData, Vector3 coordinateOffset, int faceIndex, Hexagon neighbour, HexagonType type)
 	{
 		// Get referential vertice.
 		int verticesOffset = meshData.vertices.Count;
@@ -109,43 +103,47 @@ public class Hexagon
 		          new Vector3(positionsLookup[faceIndex + 1, 0] * Width + coordinateOffset.x, 
 		                      Height + coordinateOffset.y, 
 		            		  positionsLookup[faceIndex + 1, 1] * Lentgh + coordinateOffset.z),
-		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]));
+		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]),
+		          type);
 
 		AddVertex(meshData,
 		          new Vector3(positionsLookup[(faceIndex + 1) % 6 + 1, 0] * Width + coordinateOffset.x, 
 		            		  Height + coordinateOffset.y, 
 		            		  positionsLookup[(faceIndex + 1) % 6 + 1, 1] * Lentgh + coordinateOffset.z),
-		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]));
+		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]),
+		          type);
 
 		AddVertex(meshData,
 		          new Vector3(positionsLookup[faceIndex + 1, 0] * Width + coordinateOffset.x, 
 		            		  baseLevel + coordinateOffset.y, 
 		           			  positionsLookup[faceIndex + 1, 1] * Lentgh + coordinateOffset.z),
-		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]));
+		          new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]),
+		          type);
 
 		AddVertex(meshData,
 		          new Vector3(positionsLookup[(faceIndex + 1) % 6 + 1, 0] * Width + coordinateOffset.x, 
 		            		  baseLevel + coordinateOffset.y, 
 		            		  positionsLookup[(faceIndex + 1) % 6 + 1, 1] * Lentgh + coordinateOffset.z),
-		      	  new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]));
+		      	  new Vector2(sideUVsLookup[0, 0], sideUVsLookup[0, 1]),
+		          type);
 
 
 		// triangles
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[0, 0]);
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[0, 1]);
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[0, 2]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 0]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 1]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 2]);
 
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[1, 0]);
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[1, 1]);
-		meshData.triangles[MaterialID].Add(verticesOffset + sideTrianglesLookup[1, 2]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 0]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 1]);
+		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 2]);
 	}
 
-	void AddVertex(Chunk.MeshData meshData, Vector3 position, Vector2 uvs)
+	void AddVertex(Chunk.MeshData meshData, Vector3 position, Vector2 uvs, HexagonType type)
 	{
 		meshData.vertices.Add(position);
 		meshData.uvs.Add(uvs);
 		//meshData.normals.Add(new Vector3(0, 1, 0));
-		//meshData.colors.Add(SurfaceColor);
+		meshData.colors.Add(type.TopColor);
 	}
 
 	#endregion

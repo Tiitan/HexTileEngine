@@ -12,20 +12,23 @@ public class HexTerrain : MonoBehaviour
 	const int chunkLength = 16;
 	const int chunkWidth = 16;
 
+	/*
 	[SerializeField]
-	Material[] _materials;
+	Material[] 		_materials;
+	*/
 
 	[SerializeField]
-	HexTerrainData _hexData;
+	HexTerrainData 	_hexData;
 
 	[SerializeField]
-	Chunk[] 	_chunks;
+	Chunk[] 		_chunks;
 
 	[SerializeField]
-
+	HexagonTypeData	_types;
 
 	#region Properties
 
+	/*
 	public Material[] Materials 
 	{ 
 		get 
@@ -49,6 +52,7 @@ public class HexTerrain : MonoBehaviour
 			}
 		}
 	}
+	*/
 
 	public HexTerrainData HexData 
 	{ 
@@ -56,9 +60,21 @@ public class HexTerrain : MonoBehaviour
 		set { _hexData = value; }
 	}
 
-	public bool IsInitialized
+	public HexagonTypeData Types 
+	{ 
+		get { return _types; } 
+		set { _types = value; }
+	}
+
+	public bool IsValid
 	{
-		get { return HexData != null && HexData.IsInitialized && _chunks != null; }
+		get 
+		{ 
+			return HexData != null && 
+				   _types != null &&
+				   HexData.IsInitialized && 
+				   _chunks != null;
+		}
 	}
 
 	public int Length { get { return HexData.Length; } }
@@ -85,7 +101,7 @@ public class HexTerrain : MonoBehaviour
 		Chunk chunk = chunkGameObject.AddComponent<Chunk>();
 		//chunkGameObject.hideFlags = HideFlags.;
 		chunkGameObject.transform.SetParent(transform);
-		chunkGameObject.GetComponent<MeshRenderer>().sharedMaterials = Materials;
+		chunkGameObject.GetComponent<MeshRenderer>().sharedMaterials = _types.GetMaterials();
 		chunkGameObject.transform.position = chunkWorldOffset;
 		//chunkGameObject.isStatic = true; FIXME
 		chunk.BindMap(this, chunkGridOffset, new Vector2i(chunkWidth, chunkLength));
@@ -93,16 +109,16 @@ public class HexTerrain : MonoBehaviour
         return chunk;
     }
 
-	bool EditHexagon(Vector2i gridCoordinate, Color color, float height)
+	bool EditHexagon(Vector2i gridCoordinate, int typeID, float height)
 	{
 		//Debug.Log("gridCoordinate: " + gridCoordinate);
 		bool isDirty = false;
 
 		if (HexData.Contains(gridCoordinate))
 		{
-			if ( HexData[gridCoordinate.y, gridCoordinate.x].SurfaceColor != color)
+			if ( HexData[gridCoordinate.y, gridCoordinate.x].TypeID != typeID)
 			{
-				HexData[gridCoordinate.y, gridCoordinate.x].SurfaceColor = color;
+				HexData[gridCoordinate.y, gridCoordinate.x].TypeID = typeID;
 				isDirty |= true;
 
 	        }
@@ -141,13 +157,13 @@ public class HexTerrain : MonoBehaviour
 				                             new Vector2i(j * chunkWidth, i * chunkLength));
 	}
 
-    public bool EditHexagon(Vector3 worldCoordinate, Color color, float height)
+    public bool EditHexagon(Vector3 worldCoordinate, int typeID, float height)
 	{
 		Vector2i gridCoordinate = HexagonUtils.ConvertOrthonormalToHexaSpace(worldCoordinate);
-		return EditHexagon(gridCoordinate, color, height);
+		return EditHexagon(gridCoordinate, typeID, height);
 	}
 
-	public bool EditHexagon(Vector3 initialWorldCoordinate, Vector3 endWorldCoordinate, Color color, float height)
+	public bool EditHexagon(Vector3 initialWorldCoordinate, Vector3 endWorldCoordinate, int typeID, float height)
 	{
 		bool 	 isDirty = false;
 		Vector2i initialGridCoordinate = HexagonUtils.ConvertOrthonormalToHexaSpace(initialWorldCoordinate);
@@ -155,7 +171,7 @@ public class HexTerrain : MonoBehaviour
 
 		IEnumerable<Vector2i> line = HexagonUtils.GetLine(initialGridCoordinate, endGridCoordinate);
 		foreach (Vector2i gridCoordinate in line)
-			isDirty |= EditHexagon(gridCoordinate, color, height);
+			isDirty |= EditHexagon(gridCoordinate, typeID, height);
 		return isDirty;
     }
     

@@ -12,7 +12,7 @@ public class HexTerrainScriptEditor : Editor
 	
 	bool 			_showMaterialsActive;
 
-	Color 			_colorBrush;
+	int 			_typeIdBrush;
 	float 			_heightBrush;
 	
 	bool 			_isEditModeEnabled;
@@ -82,7 +82,7 @@ public class HexTerrainScriptEditor : Editor
 
 					if (e.type == EventType.MouseDrag && _isDragging)
 					{
-						if (TargetMap.EditHexagon (_lastMousePosition, point, _colorBrush, _heightBrush))
+						if (TargetMap.EditHexagon (_lastMousePosition, point, _typeIdBrush, _heightBrush))
 						{
 							TargetMap.RebuildDirtyChunks();
 							AssetDatabase.SaveAssets();
@@ -90,7 +90,7 @@ public class HexTerrainScriptEditor : Editor
 					}
 					else
 					{
-						if (TargetMap.EditHexagon (point, _colorBrush, _heightBrush))
+						if (TargetMap.EditHexagon (point, _typeIdBrush, _heightBrush))
 						{
 							TargetMap.RebuildDirtyChunks();
 							AssetDatabase.SaveAssets();
@@ -108,6 +108,7 @@ public class HexTerrainScriptEditor : Editor
 	public override void OnInspectorGUI() 
 	{
 		// Materials
+		/*
 		_showMaterialsActive = EditorGUILayout.Foldout(_showMaterialsActive, "Materials");
 		if(_showMaterialsActive) 
 		{
@@ -116,17 +117,20 @@ public class HexTerrainScriptEditor : Editor
 			int sizeMaterials = EditorGUILayout.IntField("Size:", TargetMap.Materials.Length);
 			Material[] newMaterial = new Material[sizeMaterials];
 			for(int i = 0; i < sizeMaterials && i < TargetMap.Materials.Length; i++)
-				newMaterial[i] = EditorGUILayout.ObjectField("Element " + i, TargetMap.Materials[i], typeof(Material), false) as Material;
+				newMaterial[i] = EditorGUILayout.ObjectField("Element " + i, TargetMap.Materials[i], 
+				                                             typeof(Material), false) as Material;
 			if(EditorGUI.EndChangeCheck())
 				TargetMap.Materials = newMaterial;
 
 			EditorGUI.indentLevel--;
 		}
+		*/
 
 		GUILayout.Space(15.0f);
 
-		// Color picker
-		_colorBrush = EditorGUILayout.ColorField("Brush color: ", _colorBrush);
+		GUI.enabled = TargetMap.IsValid;
+		// HexaType picker
+		_typeIdBrush = EditorGUILayout.Popup("Brush type: ", _typeIdBrush, GUI.enabled ? TargetMap.Types.GetNames() : new[] {""} );
 
 		// Height picker
 		_heightBrush = EditorGUILayout.Slider("Brush height: ", _heightBrush, 0, 20);
@@ -135,7 +139,7 @@ public class HexTerrainScriptEditor : Editor
 		GUILayout.Space(5.0f);
 
 		// Enable edit mode buton
-		GUI.enabled = TargetMap.IsInitialized;
+
 		GUI.color = IsEditModeEnabled ? Color.green : Color.yellow;
 		if (GUILayout.Button(EditModeButtonString))
 			IsEditModeEnabled = !IsEditModeEnabled;
@@ -143,7 +147,6 @@ public class HexTerrainScriptEditor : Editor
 		GUILayout.Label(IsEditModeEnabled ? "Edit mode hide scene view handlers!" : "");
 
 		// Rebuild button.
-		GUI.enabled = TargetMap.HexData != null;
 		if (GUILayout.Button("Force rebuild"))
 			TargetMap.ForceRebuild();
 
@@ -151,8 +154,11 @@ public class HexTerrainScriptEditor : Editor
 
 		// Set Data
 		GUI.enabled = true;
-		TargetMap.HexData = EditorGUILayout.ObjectField("HexTerrain data:", TargetMap.HexData, typeof(HexTerrainData), false) as HexTerrainData;
-		
+		TargetMap.HexData = EditorGUILayout.ObjectField("HexTerrain data:", TargetMap.HexData, 
+		                                                typeof(HexTerrainData), false) as HexTerrainData;
+		TargetMap.Types = EditorGUILayout.ObjectField("Types data:", TargetMap.Types, 
+		                                              typeof(HexagonTypeData), false) as HexagonTypeData;
+
 		// Save button
 		//if (GUILayout.Button("Save"))
 		//	TargetMap.Save();
