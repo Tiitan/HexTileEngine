@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections;
@@ -71,6 +72,8 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		_hexagonTypes[_hexagonTypes.Length - 1] = new HexagonType(this);
 
 		TriggerMaterialModified();
+		EditorUtility.SetDirty(this);
+		AssetDatabase.SaveAssets();
 	}
 
 	/// <summary>

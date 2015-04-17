@@ -31,5 +31,11 @@ public class HexagonTypeDataScriptEditor : Editor
 			i++;
 			EditorGUILayout.Space();
 		}
+
+		if (GUI.changed)
+		{
+			EditorUtility.SetDirty(TargetData);
+			AssetDatabase.SaveAssets();
+		}
 	}
 }

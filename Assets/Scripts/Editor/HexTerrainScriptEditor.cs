@@ -83,18 +83,12 @@ public class HexTerrainScriptEditor : Editor
 					if (e.type == EventType.MouseDrag && _isDragging)
 					{
 						if (TargetMap.EditHexagon (_lastMousePosition, point, _typeIdBrush, _heightBrush))
-						{
-							TargetMap.RebuildDirtyChunks();
-							AssetDatabase.SaveAssets();
-						}
+							MapModified();
 					}
 					else
 					{
 						if (TargetMap.EditHexagon (point, _typeIdBrush, _heightBrush))
-						{
-							TargetMap.RebuildDirtyChunks();
-							AssetDatabase.SaveAssets();
-						}
+							MapModified();
 						_isDragging = true;
 					}
 
@@ -105,6 +99,13 @@ public class HexTerrainScriptEditor : Editor
 		}
 	}
 
+	private void MapModified()
+	{
+		TargetMap.RebuildDirtyChunks();
+		EditorUtility.SetDirty(TargetMap.HexData);
+		AssetDatabase.SaveAssets();
+	}
+	
 	public override void OnInspectorGUI() 
 	{
 		// Materials
