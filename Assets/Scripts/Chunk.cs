@@ -39,7 +39,7 @@ public class Chunk : MonoBehaviour
 		public void Init(int meshCount)
 		{
 			vertices = 		new List<Vector3>();
-			// normals = 		new List<Vector3>(); using _mesh.RecalculateNormals
+			// normals = 		new List<Vector3>(); 	// now using _mesh.RecalculateNormals
 			triangles = 	new List<int>[meshCount];
 			for (int i = 0; i < meshCount; i++)
 				triangles[i] = 	new List<int>();
@@ -50,14 +50,19 @@ public class Chunk : MonoBehaviour
 
 	void Awake () 
 	{
-		_meshFilter = GetComponent<MeshFilter>();
+	}
 
+	void OnEnable()
+	{
+		_meshFilter = GetComponent<MeshFilter>();
+		
 		if (_mesh == null)
 		{
 			_mesh = new Mesh();
 			_mesh.name = "mesh" + _chunkGridOffset;
 			_meshFilter.sharedMesh = _mesh;
 		}
+
 
 		// event is bound in BindMap on asset creation and on Awake after serialization.
 		if (_hexTerrain != null)
@@ -76,7 +81,7 @@ public class Chunk : MonoBehaviour
 		//Debug.Log("Generate geometry " + gameObject.name + ".");
 
 		MeshData meshData = new MeshData();
-		meshData.Init(_hexTerrain.Types.Count);
+		meshData.Init(_hexTerrain.Types.Count * 2);
 
 		for (int yi = 0; yi < _height; yi++)
 		{

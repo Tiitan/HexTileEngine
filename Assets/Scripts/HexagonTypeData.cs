@@ -9,7 +9,22 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 {
 	public delegate void MaterialModifiedEventHandler(object sender, EventArgs e);
 
+	#region Fields
+
 	private MaterialModifiedEventHandler _materialModified;
+
+	[SerializeField]
+	private HexagonType[] _hexagonTypes = new HexagonType[0];
+
+	#endregion
+
+	#region Properties
+
+	/// <summary>
+	/// Event triggered when a material is modified.
+	/// Allow all chunk to update their renderers.
+	/// Protected against mutliple register.
+	/// </summary>
 	public event MaterialModifiedEventHandler MaterialModified
 	{
 		add
@@ -23,8 +38,11 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		}
 	}
 
-	[SerializeField]
-	private HexagonType[] _hexagonTypes = new HexagonType[0];
+
+
+	#endregion
+
+	#region Array overload
 
 	public HexagonType this[int i]
 	{
@@ -44,17 +62,51 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 
 	public int Count { get { return _hexagonTypes.Length; } }
 
+	#endregion
+
+	#region public Methods
+
+	/// <summary>
+	/// Build and return an array containing the Materials of all Types without duplicate.
+	/// Corresponding index is set inside hexagonType for future lookup.
+	/// TODO: move building to TriggerMaterialModified to optimize and make sure the is no serialization problems.
+	/// </summary>
+	/// <returns>The names.</returns>
 	public Material[] GetMaterials()
 	{
-		Material[] materialArray = new Material[_hexagonTypes.Length];
-		int i = 0;
-		foreach (HexagonType HexagonType in _hexagonTypes)
+		List<Material> materials = new List<Material>(_hexagonTypes.Length * 2);
+		int index = 0;
+		foreach (HexagonType hexagonType in _hexagonTypes)
 		{
-			materialArray[i++] = HexagonType.TopMaterial;
+			// Top
+			int containedMaterialIndex = materials.FindIndex(x => x == hexagonType.TopMaterial);
+			if (containedMaterialIndex == -1)
+			{
+				materials.Add(hexagonType.TopMaterial);
+				hexagonType.TopMaterialIndex = index;
+				index++;
+			}
+			else
+				hexagonType.TopMaterialIndex = containedMaterialIndex;
+
+			// Side
+			containedMaterialIndex = materials.FindIndex(x => x == hexagonType.SideMaterial);
+			if (containedMaterialIndex == -1)
+			{
+				materials.Add(hexagonType.SideMaterial);
+				hexagonType.SideMaterialIndex = index;
+				index++;
+			}
+			else
+				hexagonType.SideMaterialIndex = containedMaterialIndex;
 		}
-		return materialArray;
+		return materials.ToArray();
 	}
 
+	/// <summary>
+	/// Build and return an array containing the names of all Types.
+	/// </summary>
+	/// <returns>The names.</returns>
 	public string[] GetNames()
 	{
 		string[] nameArray = new string[_hexagonTypes.Length];
@@ -66,6 +118,9 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		return nameArray;
 	}
 
+	/// <summary>
+	/// Add a new HexagonType to this container.
+	/// </summary>
 	public void AddNewElement()
 	{
 		Array.Resize(ref _hexagonTypes, _hexagonTypes.Length + 1);
@@ -85,4 +140,5 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 			_materialModified(this, new EventArgs());
 	}
 
+	#endregion
 }

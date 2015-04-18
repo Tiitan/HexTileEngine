@@ -24,9 +24,10 @@ public class HexagonTypeDataScriptEditor : Editor
 			EditorGUILayout.LabelField("Type ID: " + i);
 			EditorGUI.indentLevel++;
 			hexType.Name = EditorGUILayout.TextField("Name: ", hexType.Name);
-			hexType.TopMaterial = EditorGUILayout.ObjectField("Material: ", hexType.TopMaterial, 
-			                                               typeof(Material), false) as Material;
-			hexType.TopColor = EditorGUILayout.ColorField("Color: ", hexType.TopColor);
+			hexType.TopMaterial = EditorGUILayout.ObjectField("Top Material: ", hexType.TopMaterial, 
+			                                               		typeof(Material), false) as Material;
+			hexType.SideMaterial = EditorGUILayout.ObjectField("Side Material: ", hexType.SideMaterial, 
+			                                                  	typeof(Material), false) as Material;
 			EditorGUI.indentLevel--;
 			i++;
 			EditorGUILayout.Space();

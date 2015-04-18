@@ -85,9 +85,9 @@ public class Hexagon
 		// triangles
 		for (int i = 0; i < topTrianglesLookup.GetLength(0); i++)
 		{
-			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 0]);
-			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 1]);
-			meshData.triangles[TypeID].Add(verticesOffset + topTrianglesLookup[i, 2]);
+			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 0]);
+			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 1]);
+			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 2]);
 		}
 	}
 
@@ -129,13 +129,13 @@ public class Hexagon
 
 
 		// triangles
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 0]);
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 1]);
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[0, 2]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[0, 0]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[0, 1]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[0, 2]);
 
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 0]);
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 1]);
-		meshData.triangles[TypeID].Add(verticesOffset + sideTrianglesLookup[1, 2]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[1, 0]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[1, 1]);
+		meshData.triangles[type.SideMaterialIndex].Add(verticesOffset + sideTrianglesLookup[1, 2]);
 	}
 
 	void AddVertex(Chunk.MeshData meshData, Vector3 position, Vector2 uvs, HexagonType type)
@@ -143,7 +143,7 @@ public class Hexagon
 		meshData.vertices.Add(position);
 		meshData.uvs.Add(uvs);
 		//meshData.normals.Add(new Vector3(0, 1, 0));
-		meshData.colors.Add(type.TopColor);
+		meshData.colors.Add(Color.white);
 	}
 
 	#endregion
