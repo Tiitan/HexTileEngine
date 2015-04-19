@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Side
+  m_Name: Edge
   m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
@@ -138,7 +138,7 @@ Material:
       data:
         first:
           name: _Color
-        second: {r: .404411793, g: .404411793, b: .404411793, a: 1}
+        second: {r: .977941155, g: .809925735, b: .107861146, a: 1}
       data:
         first:
           name: _EmissionColorUI

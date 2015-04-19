@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public static class HexagonUtils 
 {
+	public const float FloatEpsilon = 0.05f;
+
 	public static Vector3 ConvertHexaSpaceToOrthonormal(Vector2i coordinate)
 	{
 		return new Vector3(coordinate.x * Hexagon.Width + coordinate.y * 0.5f * Hexagon.Width,

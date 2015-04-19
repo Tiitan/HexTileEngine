@@ -38,8 +38,6 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		}
 	}
 
-
-
 	#endregion
 
 	#region Array overload
@@ -78,22 +76,37 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		int index = 0;
 		foreach (HexagonType hexagonType in _hexagonTypes)
 		{
+			// TODO factorize this mess.
 			// Top
-			int containedMaterialIndex = materials.FindIndex(x => x == hexagonType.TopMaterial);
+			Material currentMaterial = hexagonType.TopMaterial != null ? hexagonType.TopMaterial : DefaultMaterial;
+			int containedMaterialIndex = materials.FindIndex(x => x == currentMaterial);
 			if (containedMaterialIndex == -1)
 			{
-				materials.Add(hexagonType.TopMaterial);
+				materials.Add(currentMaterial);
 				hexagonType.TopMaterialIndex = index;
 				index++;
 			}
 			else
 				hexagonType.TopMaterialIndex = containedMaterialIndex;
 
-			// Side
-			containedMaterialIndex = materials.FindIndex(x => x == hexagonType.SideMaterial);
+			// Edge
+			currentMaterial = hexagonType.EdgeMaterial != null ? hexagonType.EdgeMaterial : DefaultMaterial;
+			containedMaterialIndex = materials.FindIndex(x => x == currentMaterial);
 			if (containedMaterialIndex == -1)
 			{
-				materials.Add(hexagonType.SideMaterial);
+				materials.Add(currentMaterial);
+				hexagonType.EdgeMaterialIndex = index;
+				index++;
+			}
+			else
+				hexagonType.EdgeMaterialIndex = containedMaterialIndex;
+
+			// Side
+			currentMaterial = hexagonType.SideMaterial != null ? hexagonType.SideMaterial : DefaultMaterial;
+			containedMaterialIndex = materials.FindIndex(x => x == currentMaterial);
+			if (containedMaterialIndex == -1)
+			{
+				materials.Add(currentMaterial);
 				hexagonType.SideMaterialIndex = index;
 				index++;
 			}
@@ -141,4 +154,53 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 	}
 
 	#endregion
+
+	#region Helpers
+
+	static Material _defaultMaterial;
+	static Material DefaultMaterial 
+	{ 
+		get 
+		{ 
+			if (_defaultMaterial == null)
+				_defaultMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Diffuse.mat");
+			return _defaultMaterial;
+		} 
+	}
+
+	#endregion
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
