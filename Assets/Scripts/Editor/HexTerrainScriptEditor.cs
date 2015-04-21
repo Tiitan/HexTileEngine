@@ -103,7 +103,7 @@ public class HexTerrainScriptEditor : Editor
 	{
 		TargetMap.RebuildDirtyChunks();
 		EditorUtility.SetDirty(TargetMap.HexData);
-		AssetDatabase.SaveAssets();
+		//AssetDatabase.SaveAssets();
 	}
 	
 	public override void OnInspectorGUI() 
