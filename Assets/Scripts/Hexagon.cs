@@ -50,18 +50,18 @@ public class Hexagon
 	/// <param name="coordinate">2d grid coordinate of this hexa relative to its chunk </param>
 	/// <param name="neighbours"> Array containing the 6 neighbours of this hex, some can be null</param>
 	public void AddToChunk(ref Chunk.MeshData meshData, Vector3 chunkOffSet, Vector2i coordinate, 
-	                       Hexagon[] neighbours, HexagonType type)
+	                       Hexagon[] neighbours, HexagonTypeData types)
 	{
 		//TODO: compute top vertex position of this hexagon at start to avoid multiple recomputation.
 
 		// Compute hexagon position.
 		Vector3 coordinateOffset = HexagonUtils.ConvertHexaSpaceToOrthonormal(coordinate) + chunkOffSet;
 
-		GenerateTop(ref meshData, coordinateOffset, type, neighbours);
+		GenerateTop(ref meshData, coordinateOffset, types, neighbours);
 		for (int i = 0; i < 6; i++)
 		{
 			if (IsSideVisible(neighbours[i]))
-				GenerateSide(ref meshData, coordinateOffset, i, neighbours, type);
+				GenerateSide(ref meshData, coordinateOffset, i, neighbours, types);
 		}
 	}
 
@@ -69,7 +69,7 @@ public class Hexagon
 
 	#region Private methods
 
-	void GenerateTop(ref Chunk.MeshData meshData, Vector3 coordinateOffset, HexagonType type, Hexagon[] neighbours)
+	void GenerateTop(ref Chunk.MeshData meshData, Vector3 coordinateOffset, HexagonTypeData types, Hexagon[] neighbours)
 	{
 		// Get referential vertice.
 		int verticesOffset = meshData.vertices.Count;
@@ -77,8 +77,8 @@ public class Hexagon
 		for (int i = 0; i < positionsLookup.GetLength(0); i++)
 		{
 			Vector3 vertexRelativePosition;
-			if (i != 0 && type.SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
-				vertexRelativePosition = ComputeVertexRelativePosition(type.SizeMultiplier, neighbours, i - 1);
+			if (i != 0 && types[_typeID].SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
+				vertexRelativePosition = ComputeVertexRelativePosition(types[_typeID].SizeMultiplier, neighbours, i - 1);
 			else
 				vertexRelativePosition = new Vector3(positionsLookup[i, 0], positionsLookup[i, 0]);
 
@@ -92,31 +92,33 @@ public class Hexagon
 		// triangles
 		for (int i = 0; i < topTrianglesLookup.GetLength(0); i++)
 		{
-			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 0]);
-			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 1]);
-			meshData.triangles[type.TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 2]);
+			meshData.triangles[types[_typeID].TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 0]);
+			meshData.triangles[types[_typeID].TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 1]);
+			meshData.triangles[types[_typeID].TopMaterialIndex].Add(verticesOffset + topTrianglesLookup[i, 2]);
 		}
 	}
 
 	void GenerateSide(ref Chunk.MeshData meshData, Vector3 coordinateOffset, 
-	                  int faceIndex, Hexagon[] neighbours, HexagonType type)
+	                  int faceIndex, Hexagon[] neighbours, HexagonTypeData types)
 	{
 		// Make Edge
 		Vector3[] edgePosition;
-		if (type.EdgeHeight > HexagonUtils.FloatEpsilon  || type.SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
+		if (types[_typeID].EdgeHeight > HexagonUtils.FloatEpsilon  || types[_typeID].SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
 		{
-			edgePosition = ComputeEdgeRelativePosition(type.SizeMultiplier, neighbours, faceIndex);
+			edgePosition = ComputeEdgeRelativePosition(types[_typeID].SizeMultiplier, neighbours, faceIndex);
 
 			AddSideQuad(ref meshData, coordinateOffset, faceIndex, edgePosition,
-			            type.EdgeMaterialIndex, Height, Height - type.EdgeHeight, 0f);
+			            types[_typeID].EdgeMaterialIndex, Height, Height - types[_typeID].EdgeHeight, 0f);
 		}
 
 		// Make Side
 		edgePosition = ComputeEdgeRelativePosition(1, neighbours, faceIndex);
-		float baseLevel = neighbours[faceIndex] == null ? -1 : neighbours[faceIndex].Height;
-		if (baseLevel < Height - type.EdgeHeight - HexagonUtils.FloatEpsilon)
-			AddSideQuad(ref meshData, coordinateOffset, faceIndex, edgePosition ,
-			type.SideMaterialIndex, Height - type.EdgeHeight, baseLevel, 1 - (Height - type.EdgeHeight - baseLevel) * type.SideLoopFrequency);
+		// TODO: remove unneeded underneath geometry when a corner don't make the side visible.
+		float baseLevel = neighbours[faceIndex] == null ? -1 : neighbours[faceIndex].Height - types[neighbours[faceIndex].TypeID].EdgeHeight;
+		if (baseLevel < Height - types[_typeID].EdgeHeight - HexagonUtils.FloatEpsilon)
+			AddSideQuad(ref meshData, coordinateOffset, faceIndex, edgePosition,
+			            types[_typeID].SideMaterialIndex, Height - types[_typeID].EdgeHeight, baseLevel,
+			            1 - (Height - types[_typeID].EdgeHeight - baseLevel) * types[_typeID].SideLoopFrequency);
 	}
 
 	bool IsSideVisible(Hexagon neighbour)

@@ -95,7 +95,7 @@ public class Chunk : MonoBehaviour
 						Hexagon hexa = _hexTerrain.HexData[yi + _chunkGridOffset.y, xi + _chunkGridOffset.x];
 						hexa.AddToChunk(ref meshData, Vector3.zero, coordinate, 
 							           	HexagonUtils.GetNeighbours(coordinate + _chunkGridOffset, _hexTerrain.HexData),
-						                _hexTerrain.Types[hexa.TypeID]);
+						                _hexTerrain.Types);
 					}
               	}
 			}
