@@ -126,7 +126,8 @@ public class HexagonTypeData : ScriptableObject, IEnumerable<HexagonType>
 		int i = 0;
 		foreach (HexagonType HexagonType in _hexagonTypes)
 		{
-			nameArray[i++] = HexagonType.Name;
+			nameArray[i++] = !string.IsNullOrEmpty(HexagonType.Name) ? HexagonType.Name : 
+				(HexagonType.TopMaterial != null ? HexagonType.TopMaterial.name : "Unamed");
 		}
 		return nameArray;
 	}

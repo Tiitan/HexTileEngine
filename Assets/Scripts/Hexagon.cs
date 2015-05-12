@@ -6,8 +6,8 @@ using System;
 [Serializable]
 public class Hexagon
 {
-	public const float Lentgh = 1.0f;
-	public const float Width = 1.0f;
+	public const float Lentgh = 10.0f;
+	public const float Width = 10.0f;
 
 	[SerializeField]
 	private int 	_typeID;
@@ -60,7 +60,7 @@ public class Hexagon
 		GenerateTop(ref meshData, coordinateOffset, types, neighbours);
 		for (int i = 0; i < 6; i++)
 		{
-			if (IsSideVisible(neighbours[i]))
+			if (IsSideVisible(neighbours[i], types))
 				GenerateSide(ref meshData, coordinateOffset, i, neighbours, types);
 		}
 	}
@@ -78,13 +78,13 @@ public class Hexagon
 		{
 			Vector3 vertexRelativePosition;
 			if (i != 0 && types[_typeID].SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
-				vertexRelativePosition = ComputeVertexRelativePosition(types[_typeID].SizeMultiplier, neighbours, i - 1);
+				vertexRelativePosition = ComputeVertexRelativePosition(types, neighbours, i - 1, Height);
 			else
-				vertexRelativePosition = new Vector3(positionsLookup[i, 0], positionsLookup[i, 0]);
+				vertexRelativePosition = new Vector3(positionsLookup[i, 0], Height, positionsLookup[i, 1]);
 
 			AddVertex(ref meshData,
 			          new Vector3(vertexRelativePosition.x * Width + coordinateOffset.x, 
-						          Height + coordinateOffset.y, 
+			            		  vertexRelativePosition.y + coordinateOffset.y, 
 			            		  vertexRelativePosition.z * Lentgh + coordinateOffset.z),
 			          new Vector2(topUVsLookup[i, 0], topUVsLookup[i, 1]));
 		}
@@ -101,64 +101,97 @@ public class Hexagon
 	void GenerateSide(ref Chunk.MeshData meshData, Vector3 coordinateOffset, 
 	                  int faceIndex, Hexagon[] neighbours, HexagonTypeData types)
 	{
-		// Make Edge
-		Vector3[] edgePosition;
-		if (types[_typeID].EdgeHeight > HexagonUtils.FloatEpsilon  || types[_typeID].SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
-		{
-			edgePosition = ComputeEdgeRelativePosition(types[_typeID].SizeMultiplier, neighbours, faceIndex);
 
-			AddSideQuad(ref meshData, coordinateOffset, faceIndex, edgePosition,
-			            types[_typeID].EdgeMaterialIndex, Height, Height - types[_typeID].EdgeHeight, 0f);
+		float bottomEdgeHeight = Height - types[_typeID].EdgeHeight;
+		if (neighbours[faceIndex] != null && bottomEdgeHeight < neighbours[faceIndex].Height)
+		{
+			// If the bottomEdge go lower than the neighbour hexagon, make them match.
+			//bottomEdgeHeight = neighbours[faceIndex].Height;
+		}
+
+		// Make Edge
+		if (types[_typeID].EdgeHeight > HexagonUtils.FloatEpsilon  ||
+		    types[_typeID].SizeMultiplier < 1 - HexagonUtils.FloatEpsilon)
+		{
+			Vector3[] topEdgePosition = ComputeEdgeRelativePosition(types, neighbours, faceIndex, Height);
+			Vector3[] bottomEdgePosition = ComputeEdgeRelativePositionBase(faceIndex, bottomEdgeHeight);
+			AddSideQuad(ref meshData, coordinateOffset, topEdgePosition, bottomEdgePosition,
+			            types[_typeID].EdgeMaterialIndex, 0f);
 		}
 
 		// Make Side
-		edgePosition = ComputeEdgeRelativePosition(1, neighbours, faceIndex);
+		float baseLevel = neighbours[faceIndex] == null ? 
+			-10 : neighbours[faceIndex].Height - types[neighbours[faceIndex].TypeID].EdgeHeight;
+		Vector3[] topSidePosition = ComputeEdgeRelativePositionBase(faceIndex, bottomEdgeHeight);
+		Vector3[] baseEdgePosition = ComputeEdgeRelativePositionBase(faceIndex, baseLevel);
 		// TODO: remove unneeded underneath geometry when a corner don't make the side visible.
-		float baseLevel = neighbours[faceIndex] == null ? -1 : neighbours[faceIndex].Height - types[neighbours[faceIndex].TypeID].EdgeHeight;
-		if (baseLevel < Height - types[_typeID].EdgeHeight - HexagonUtils.FloatEpsilon)
-			AddSideQuad(ref meshData, coordinateOffset, faceIndex, edgePosition,
-			            types[_typeID].SideMaterialIndex, Height - types[_typeID].EdgeHeight, baseLevel,
-			            1 - (Height - types[_typeID].EdgeHeight - baseLevel) * types[_typeID].SideLoopFrequency);
+		if (baseLevel < bottomEdgeHeight - HexagonUtils.FloatEpsilon)
+			AddSideQuad(ref meshData, coordinateOffset, topSidePosition, baseEdgePosition,
+			            types[_typeID].SideMaterialIndex,
+			            1 - (bottomEdgeHeight - baseLevel) * types[_typeID].SideLoopFrequency);
 	}
 
-	bool IsSideVisible(Hexagon neighbour)
+	Hexagon[] GetNeighboursOfNeighbour(Hexagon[] neighbours, int faceIndex)
 	{
-		return neighbour == null || neighbour.Height < this.Height - HexagonUtils.FloatEpsilon;
+		Hexagon[] neighboursOfNeighbour = new Hexagon[6];
+		neighboursOfNeighbour[(faceIndex + 1) % 6] = neighbours[(faceIndex + 2) % 6];
+		neighboursOfNeighbour[(faceIndex + 5) % 6] = neighbours[(faceIndex + 4) % 6];
+		neighboursOfNeighbour[(faceIndex + 3) % 6] = this;
+		return neighboursOfNeighbour;
 	}
 
-	Vector3 ComputeVertexRelativePosition(float sizeMultiplier, Hexagon[] neighbours, int vertexIndex)
+	bool IsSideVisible(Hexagon neighbour, HexagonTypeData types)
 	{
-		bool firstNeighbourVisibility = IsSideVisible(neighbours[(vertexIndex + 5) % 6]);
-		bool secondNeighbourVisibility = IsSideVisible(neighbours[vertexIndex]);
+		return neighbour == null || 
+			   neighbour.Height < this.Height - HexagonUtils.FloatEpsilon;
+	}
 
-		if (sizeMultiplier > 1 - HexagonUtils.FloatEpsilon || 
+	Vector3[] ComputeEdgeRelativePositionBase(int faceIndex, float height)
+	{
+		int vertexIndex = faceIndex;
+		Vector3[] vect =  new Vector3[2];
+		vect[0] = new Vector3(positionsLookup[vertexIndex + 1, 0], height, positionsLookup[vertexIndex + 1, 1]);
+		vertexIndex = (vertexIndex + 1) % 6;
+		vect[1] = new Vector3(positionsLookup[vertexIndex + 1, 0], height, positionsLookup[vertexIndex + 1, 1]);
+		return vect;
+	}
+
+	Vector3 ComputeVertexRelativePosition(HexagonTypeData types, Hexagon[] neighbours, int vertexIndex, float height)
+	{
+		bool firstNeighbourVisibility = IsSideVisible(neighbours[(vertexIndex + 5) % 6], types);
+		bool secondNeighbourVisibility = IsSideVisible(neighbours[vertexIndex], types);
+
+		if (types[_typeID].SizeMultiplier > 1 - HexagonUtils.FloatEpsilon || 
 		    (!firstNeighbourVisibility && !secondNeighbourVisibility))
 		{
-			return new Vector3(positionsLookup[vertexIndex + 1, 0], 0, positionsLookup[vertexIndex + 1, 1]);
+			return new Vector3(positionsLookup[vertexIndex + 1, 0], height, positionsLookup[vertexIndex + 1, 1]);
 		}
 		else if (firstNeighbourVisibility && secondNeighbourVisibility)
 		{
-			return new Vector3(positionsLookup[vertexIndex + 1, 0] * sizeMultiplier, 0, 
-			                   positionsLookup[vertexIndex + 1, 1] * sizeMultiplier);
+			return new Vector3(positionsLookup[vertexIndex + 1, 0] * types[_typeID].SizeMultiplier, 
+			                   height, 
+			                   positionsLookup[vertexIndex + 1, 1] * types[_typeID].SizeMultiplier);
 		}
 		else if (firstNeighbourVisibility && !secondNeighbourVisibility)
 		{
-			return new Vector3(neighbourRelativePosition[(vertexIndex + 5) % 6, 0] + positionsLookup[(vertexIndex + 2) % 6 + 1, 0] *  (2 - sizeMultiplier), 0, 
-			                   neighbourRelativePosition[(vertexIndex + 5) % 6, 1] + positionsLookup[(vertexIndex + 2) % 6 + 1, 1] *  (2 - sizeMultiplier));
+			return new Vector3(neighbourRelativePosition[(vertexIndex + 5) % 6, 0] + positionsLookup[(vertexIndex + 2) % 6 + 1, 0] *  (2 - types[_typeID].SizeMultiplier), 
+			                   height, 
+			                   neighbourRelativePosition[(vertexIndex + 5) % 6, 1] + positionsLookup[(vertexIndex + 2) % 6 + 1, 1] *  (2 - types[_typeID].SizeMultiplier));
 		}
 		else if (!firstNeighbourVisibility && secondNeighbourVisibility)
 		{
-			return new Vector3(neighbourRelativePosition[(vertexIndex + 0) % 6, 0] + positionsLookup[(vertexIndex + 4) % 6 + 1, 0] *  (2 - sizeMultiplier), 0, 
-			                   neighbourRelativePosition[(vertexIndex + 0) % 6, 1] + positionsLookup[(vertexIndex + 4) % 6 + 1, 1] *  (2 - sizeMultiplier));
+			return new Vector3(neighbourRelativePosition[(vertexIndex + 0) % 6, 0] + positionsLookup[(vertexIndex + 4) % 6 + 1, 0] *  (2 - types[_typeID].SizeMultiplier), 
+			                   height, 
+			                   neighbourRelativePosition[(vertexIndex + 0) % 6, 1] + positionsLookup[(vertexIndex + 4) % 6 + 1, 1] *  (2 - types[_typeID].SizeMultiplier));
 		}
 		throw new Exception();
 	}
 
-	Vector3[] ComputeEdgeRelativePosition(float sizeMultiplier, Hexagon[] neighbours, int faceIndex)
+	Vector3[] ComputeEdgeRelativePosition(HexagonTypeData types, Hexagon[] neighbours, int faceIndex, float height)
 	{
 		Vector3[] edge = new Vector3[2];
-		edge[0] = ComputeVertexRelativePosition(sizeMultiplier, neighbours, faceIndex);
-		edge[1] = ComputeVertexRelativePosition(sizeMultiplier, neighbours, (faceIndex + 1) % 6);
+		edge[0] = ComputeVertexRelativePosition(types, neighbours, faceIndex, height);
+		edge[1] = ComputeVertexRelativePosition(types, neighbours, (faceIndex + 1) % 6, height);
 		return edge;
 	}
 
@@ -166,33 +199,39 @@ public class Hexagon
 	
 	#region Private static Function
 
-	static void AddSideQuad(ref Chunk.MeshData meshData, Vector3 coordinateOffset, int faceIndex, Vector3[] edgeRelativePosition,
-	                        int triangleIndex, float top, float bottom, float uvBottomPosition)
+	static void AddSideQuad(ref Chunk.MeshData meshData, 
+	                        Vector3 coordinateOffset, 
+	                        Vector3[] topEdgePosition,
+	                        Vector3[] bottomEdgePosition,
+	                        int triangleIndex, 
+	                        float uvBottomPosition)
 	{
 		int verticesOffset = meshData.vertices.Count;
 
+		Vector3 scale = new Vector3(Width, 1, Lentgh);
+
 		AddVertex(ref meshData,
-		          new Vector3(edgeRelativePosition[0].x * Width + coordinateOffset.x, 
-		            top + coordinateOffset.y, 
-		            edgeRelativePosition[0].z * Lentgh + coordinateOffset.z),
+		          new Vector3(topEdgePosition[0].x * Width + coordinateOffset.x, 
+		            topEdgePosition[0].y + coordinateOffset.y, 
+		            topEdgePosition[0].z * Lentgh + coordinateOffset.z),
 		          new Vector2(0, 1));
 		
 		AddVertex(ref meshData,
-		          new Vector3(edgeRelativePosition[1].x * Width + coordinateOffset.x, 
-		            top + coordinateOffset.y, 
-		            edgeRelativePosition[1].z * Lentgh + coordinateOffset.z),
+		          new Vector3(topEdgePosition[1].x * Width + coordinateOffset.x, 
+		            topEdgePosition[1].y + coordinateOffset.y, 
+		            topEdgePosition[1].z * Lentgh + coordinateOffset.z),
 		          new Vector2(1, 1));
 		
 		AddVertex(ref meshData,
-		          new Vector3(positionsLookup[faceIndex + 1, 0] * Width + coordinateOffset.x, 
-		            bottom + coordinateOffset.y, 
-		            positionsLookup[faceIndex + 1, 1] * Lentgh + coordinateOffset.z),
+		          new Vector3(bottomEdgePosition[0].x * Width + coordinateOffset.x, 
+		            bottomEdgePosition[0].y + coordinateOffset.y, 
+		            bottomEdgePosition[0].z * Lentgh + coordinateOffset.z),
 		          new Vector2(0, uvBottomPosition));
 		
 		AddVertex(ref meshData,
-		          new Vector3(positionsLookup[(faceIndex + 1) % 6 + 1, 0] * Width + coordinateOffset.x, 
-		            bottom + coordinateOffset.y, 
-		            positionsLookup[(faceIndex + 1) % 6 + 1, 1] * Lentgh + coordinateOffset.z),
+		          new Vector3(bottomEdgePosition[1].x * Width + coordinateOffset.x, 
+		            bottomEdgePosition[1].y + coordinateOffset.y, 
+		            bottomEdgePosition[1].z * Lentgh + coordinateOffset.z),
 		          new Vector2(1, uvBottomPosition));
 
 		// triangles

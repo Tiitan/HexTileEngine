@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public static class HexagonUtils 
 {
-	public const float FloatEpsilon = 0.05f;
+	public const float FloatEpsilon = 0.005f;
 
 	public static Vector3 ConvertHexaSpaceToOrthonormal(Vector2i coordinate)
 	{
@@ -86,4 +86,20 @@ public static class HexagonUtils
 			line.Add(Vector2i.Lerp(initialGridCoordinate, endGridCoordinate, (float)i / distance));
 		return line;
 	}
+
+	static public void SetHexagonalPosition(this Transform transform, Vector2i hexagonCoordinatePosition)
+	{
+		transform.position = ConvertHexaSpaceToOrthonormal(hexagonCoordinatePosition);
+	}
+
+	static public Vector2i GetHexagonalPosition(this Transform transform)
+	{
+		return ConvertOrthonormalToHexaSpace(transform.position);
+	}
+
+	/*public static Vector3 operator*(this Vector3 vector a, Vector3 b)
+	{
+		return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
+	}*/
+
 }

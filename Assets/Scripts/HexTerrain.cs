@@ -109,20 +109,20 @@ public class HexTerrain : MonoBehaviour
         return chunk;
     }
 
-	bool EditHexagon(Vector2i gridCoordinate, int typeID, float height)
+	bool EditHexagon(Vector2i gridCoordinate, int typeID, float height, PaintLayer paintLayer)
 	{
 		//Debug.Log("gridCoordinate: " + gridCoordinate);
 		bool isDirty = false;
 
 		if (HexData.Contains(gridCoordinate))
 		{
-			if ( HexData[gridCoordinate.y, gridCoordinate.x].TypeID != typeID)
+			if (paintLayer.Contain(PaintLayer.Type) && HexData[gridCoordinate.y, gridCoordinate.x].TypeID != typeID)
 			{
 				HexData[gridCoordinate.y, gridCoordinate.x].TypeID = typeID;
 				isDirty |= true;
 
 	        }
-			if ( HexData[gridCoordinate.y, gridCoordinate.x].Height != height)
+			if (paintLayer.Contain(PaintLayer.Height) && HexData[gridCoordinate.y, gridCoordinate.x].Height != height)
 			{
 				HexData[gridCoordinate.y, gridCoordinate.x].Height = height;
 				isDirty |= true;
@@ -157,13 +157,14 @@ public class HexTerrain : MonoBehaviour
 				                             new Vector2i(j * chunkWidth, i * chunkLength));
 	}
 
-    public bool EditHexagon(Vector3 worldCoordinate, int typeID, float height)
+	public bool EditHexagon(Vector3 worldCoordinate, int typeID, float height, PaintLayer paintLayer)
 	{
 		Vector2i gridCoordinate = HexagonUtils.ConvertOrthonormalToHexaSpace(worldCoordinate);
-		return EditHexagon(gridCoordinate, typeID, height);
+		return EditHexagon(gridCoordinate, typeID, height, paintLayer);
 	}
 
-	public bool EditHexagon(Vector3 initialWorldCoordinate, Vector3 endWorldCoordinate, int typeID, float height)
+	public bool EditHexagon(Vector3 initialWorldCoordinate, Vector3 endWorldCoordinate,
+	                        int typeID, float height, PaintLayer paintLayer)
 	{
 		bool 	 isDirty = false;
 		Vector2i initialGridCoordinate = HexagonUtils.ConvertOrthonormalToHexaSpace(initialWorldCoordinate);
@@ -171,7 +172,7 @@ public class HexTerrain : MonoBehaviour
 
 		IEnumerable<Vector2i> line = HexagonUtils.GetLine(initialGridCoordinate, endGridCoordinate);
 		foreach (Vector2i gridCoordinate in line)
-			isDirty |= EditHexagon(gridCoordinate, typeID, height);
+			isDirty |= EditHexagon(gridCoordinate, typeID, height, paintLayer);
 		return isDirty;
     }
     

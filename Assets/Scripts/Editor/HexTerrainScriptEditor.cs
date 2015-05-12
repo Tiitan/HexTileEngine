@@ -18,7 +18,9 @@ public class HexTerrainScriptEditor : Editor
 	bool 			_isEditModeEnabled;
 
 	bool 			_isDragging;
-	
+
+	PaintLayer		_paintLayer = PaintLayer.All;
+
 	HexTerrain		TargetMap
 	{
 		get { return target as HexTerrain; }
@@ -82,12 +84,12 @@ public class HexTerrainScriptEditor : Editor
 
 					if (e.type == EventType.MouseDrag && _isDragging)
 					{
-						if (TargetMap.EditHexagon (_lastMousePosition, point, _typeIdBrush, _heightBrush))
+						if (TargetMap.EditHexagon (_lastMousePosition, point, _typeIdBrush, _heightBrush, _paintLayer))
 							MapModified();
 					}
 					else
 					{
-						if (TargetMap.EditHexagon (point, _typeIdBrush, _heightBrush))
+						if (TargetMap.EditHexagon (point, _typeIdBrush, _heightBrush, _paintLayer))
 							MapModified();
 						_isDragging = true;
 					}
@@ -108,39 +110,26 @@ public class HexTerrainScriptEditor : Editor
 	
 	public override void OnInspectorGUI() 
 	{
-		// Materials
-		/*
-		_showMaterialsActive = EditorGUILayout.Foldout(_showMaterialsActive, "Materials");
-		if(_showMaterialsActive) 
-		{
-			EditorGUI.indentLevel++;
-			EditorGUI.BeginChangeCheck();
-			int sizeMaterials = EditorGUILayout.IntField("Size:", TargetMap.Materials.Length);
-			Material[] newMaterial = new Material[sizeMaterials];
-			for(int i = 0; i < sizeMaterials && i < TargetMap.Materials.Length; i++)
-				newMaterial[i] = EditorGUILayout.ObjectField("Element " + i, TargetMap.Materials[i], 
-				                                             typeof(Material), false) as Material;
-			if(EditorGUI.EndChangeCheck())
-				TargetMap.Materials = newMaterial;
 
-			EditorGUI.indentLevel--;
-		}
-		*/
 
 		GUILayout.Space(15.0f);
 
 		GUI.enabled = TargetMap.IsValid;
+		_paintLayer = (PaintLayer)EditorGUILayout.MaskField ("Painted layer: ", (int)_paintLayer, new[] {"Type", "Height"});
+
 		// HexaType picker
+		GUI.enabled = TargetMap.IsValid && _paintLayer.Contain(PaintLayer.Type);
 		_typeIdBrush = EditorGUILayout.Popup("Brush type: ", _typeIdBrush, GUI.enabled ? TargetMap.Types.GetNames() : new[] {""} );
 
 		// Height picker
+		GUI.enabled = TargetMap.IsValid && _paintLayer.Contain(PaintLayer.Height);
 		_heightBrush = EditorGUILayout.Slider("Brush height: ", _heightBrush, 0, 20);
 
 		// Space
 		GUILayout.Space(5.0f);
 
 		// Enable edit mode buton
-
+		GUI.enabled = TargetMap.IsValid;
 		GUI.color = IsEditModeEnabled ? Color.green : Color.yellow;
 		if (GUILayout.Button(EditModeButtonString))
 			IsEditModeEnabled = !IsEditModeEnabled;
@@ -159,13 +148,31 @@ public class HexTerrainScriptEditor : Editor
 		                                                typeof(HexTerrainData), false) as HexTerrainData;
 		TargetMap.Types = EditorGUILayout.ObjectField("Types data:", TargetMap.Types, 
 		                                              typeof(HexagonTypeData), false) as HexagonTypeData;
-
-		// Save button
-		//if (GUILayout.Button("Save"))
-		//	TargetMap.Save();
-		// Reload button
-		//if (GUILayout.Button("Reload") && EditorUtility.DisplayDialog("Confirmation", "Are you sure ? you will loose any unsaved change", "Yes"))
-		//	TargetMap.Reload();
-
 	} 
 }
+
+// Materials
+/*
+		_showMaterialsActive = EditorGUILayout.Foldout(_showMaterialsActive, "Materials");
+		if(_showMaterialsActive) 
+		{
+			EditorGUI.indentLevel++;
+			EditorGUI.BeginChangeCheck();
+			int sizeMaterials = EditorGUILayout.IntField("Size:", TargetMap.Materials.Length);
+			Material[] newMaterial = new Material[sizeMaterials];
+			for(int i = 0; i < sizeMaterials && i < TargetMap.Materials.Length; i++)
+				newMaterial[i] = EditorGUILayout.ObjectField("Element " + i, TargetMap.Materials[i], 
+				                                             typeof(Material), false) as Material;
+			if(EditorGUI.EndChangeCheck())
+				TargetMap.Materials = newMaterial;
+
+			EditorGUI.indentLevel--;
+		}
+*/
+
+// Save button
+//if (GUILayout.Button("Save"))
+//	TargetMap.Save();
+// Reload button
+//if (GUILayout.Button("Reload") && EditorUtility.DisplayDialog("Confirmation", "Are you sure ? you will loose any unsaved change", "Yes"))
+//	TargetMap.Reload();
