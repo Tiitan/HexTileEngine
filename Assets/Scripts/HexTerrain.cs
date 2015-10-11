@@ -1,10 +1,6 @@
 ﻿using UnityEngine;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
+using System;
 
 [ExecuteInEditMode]
 public class HexTerrain : MonoBehaviour 
@@ -18,17 +14,24 @@ public class HexTerrain : MonoBehaviour
 	*/
 
 	[SerializeField]
-	HexTerrainData 	_hexData;
+	private HexTerrainData 	_hexData;
 
 	[SerializeField]
-	Chunk[] 		_chunks;
+    private Chunk[] 		_chunks;
 
 	[SerializeField]
-	HexagonTypeData	_types;
+    private HexagonTypeData _types;
+
+    static HexTerrain       _instance;
 
 	#region Properties
 
-	/*
+    public static HexTerrain Instance
+    {
+        get { return _instance; }
+    }
+
+    /*
 	public Material[] Materials 
 	{ 
 		get 
@@ -54,7 +57,7 @@ public class HexTerrain : MonoBehaviour
 	}
 	*/
 
-	public HexTerrainData HexData 
+    public HexTerrainData HexData 
 	{ 
 		get { return _hexData; } 
 		set { _hexData = value; }
@@ -86,6 +89,11 @@ public class HexTerrain : MonoBehaviour
 
 	#region Unity events
 
+    void OnEnable()
+    {
+        _instance = this;
+    }
+
 	void OnDestroy()
 	{
 		Clean();
@@ -116,15 +124,15 @@ public class HexTerrain : MonoBehaviour
 
 		if (HexData.Contains(gridCoordinate))
 		{
-			if (paintLayer.Contain(PaintLayer.Type) && HexData[gridCoordinate.y, gridCoordinate.x].TypeID != typeID)
+			if (paintLayer.Contain(PaintLayer.Type) && HexData[gridCoordinate].TypeID != typeID)
 			{
-				HexData[gridCoordinate.y, gridCoordinate.x].TypeID = typeID;
+				HexData[gridCoordinate].TypeID = typeID;
 				isDirty |= true;
 
 	        }
-			if (paintLayer.Contain(PaintLayer.Height) && HexData[gridCoordinate.y, gridCoordinate.x].Height != height)
+			if (paintLayer.Contain(PaintLayer.Height) && HexData[gridCoordinate].Height != height)
 			{
-				HexData[gridCoordinate.y, gridCoordinate.x].Height = height;
+				HexData[gridCoordinate].Height = height;
 				isDirty |= true;
 			}
 			_chunks[gridCoordinate.y / chunkLength * ChunkRow + gridCoordinate.x / chunkWidth].IsDirty |= isDirty;
@@ -198,12 +206,24 @@ public class HexTerrain : MonoBehaviour
 		}
 	}
 
-	public bool Contains(int x, int y)
+	public bool Contains(Vector2i location)
 	{
-		return HexData.Contains(x, y);
+		return HexData.Contains(location);
 	}
 
-	#endregion
+    public Vector2i? RegisterPawn(PawnControler pawnControler)
+    {
+        Vector2i gridCoordinate = HexagonUtils.ConvertOrthonormalToHexaSpace(pawnControler.transform.position);
+        if (HexData.Contains(gridCoordinate))
+        {
+            HexData[gridCoordinate].LocalPawns.Add(pawnControler);
+            return gridCoordinate;
+        }
+
+        return null;
+    }
+
+    #endregion
 }
 
 

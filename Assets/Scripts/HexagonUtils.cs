@@ -8,15 +8,15 @@ public static class HexagonUtils
 
 	public static Vector3 ConvertHexaSpaceToOrthonormal(Vector2i coordinate)
 	{
-		return new Vector3(coordinate.x * Hexagon.Width + coordinate.y * 0.5f * Hexagon.Width,
+		return new Vector3(coordinate.x * Hexagon.Scale.x + coordinate.y * 0.5f * Hexagon.Scale.z,
 		                   0,
-		                   coordinate.y * 0.75f * Hexagon.Lentgh);
+		                   coordinate.y * 0.75f * Hexagon.Scale.z);
 	}
 	
 	static Vector2i ConvertOrthonormalToAproxHexaSpace(Vector3 position)
 	{
-		return new Vector2i(Mathf.FloorToInt((position.x / Hexagon.Width - position.z * 2 / 3 / Hexagon.Lentgh) + 0.5f),
-		                    Mathf.FloorToInt((position.z * 4 / 3 / Hexagon.Lentgh) + 0.5f));
+		return new Vector2i(Mathf.FloorToInt((position.x / Hexagon.Scale.x - position.z * 2 / 3 / Hexagon.Scale.z) + 0.5f),
+		                    Mathf.FloorToInt((position.z * 4 / 3 / Hexagon.Scale.z) + 0.5f));
 	}
 	
 	public static Vector2i ConvertOrthonormalToHexaSpace(Vector3 position)
@@ -96,10 +96,4 @@ public static class HexagonUtils
 	{
 		return ConvertOrthonormalToHexaSpace(transform.position);
 	}
-
-	/*public static Vector3 operator*(this Vector3 vector a, Vector3 b)
-	{
-		return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
-	}*/
-
 }

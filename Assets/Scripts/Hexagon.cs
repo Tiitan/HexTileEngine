@@ -1,21 +1,27 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System;
 
 [Serializable]
 public class Hexagon
 {
-	public const float Lentgh = 10.0f;
-	public const float Width = 10.0f;
+	public static readonly Vector3 Scale = new Vector3(10f, 1f, 10f);
 
-	[SerializeField]
+    #region Fields
+
+    [SerializeField]
 	private int 	_typeID;
 
 	[SerializeField]
 	private float	_height;
 
-	public int 		TypeID 
+    private List<PawnControler> _localPawns = new List<PawnControler>();
+
+    #endregion
+
+    #region Public Properties
+
+    public int 		TypeID 
 	{
 		get { return _typeID; }
 		set { _typeID = value; }
@@ -27,10 +33,17 @@ public class Hexagon
 		set { _height = value; }
 	}
 
-	#region Constructors
+    public List<PawnControler> LocalPawns
+    {
+        get { return _localPawns; }
+    }
 
-	/// <summary>Constructor used by Unity's serialization system.</summary>
-	public Hexagon() {}
+    #endregion
+
+    #region Constructors
+
+    /// <summary>Constructor used by Unity's serialization system.</summary>
+    public Hexagon() {}
 
 	/// <summary>Constructor used on asset creation.</summary>
 	public Hexagon(int typeID)
@@ -83,9 +96,7 @@ public class Hexagon
 				vertexRelativePosition = new Vector3(positionsLookup[i, 0], Height, positionsLookup[i, 1]);
 
 			AddVertex(ref meshData,
-			          new Vector3(vertexRelativePosition.x * Width + coordinateOffset.x, 
-			            		  vertexRelativePosition.y + coordinateOffset.y, 
-			            		  vertexRelativePosition.z * Lentgh + coordinateOffset.z),
+                      vertexRelativePosition.Mult(Scale) + coordinateOffset,
 			          new Vector2(topUVsLookup[i, 0], topUVsLookup[i, 1]));
 		}
 		
@@ -208,31 +219,21 @@ public class Hexagon
 	{
 		int verticesOffset = meshData.vertices.Count;
 
-		Vector3 scale = new Vector3(Width, 1, Lentgh);
-
-		AddVertex(ref meshData,
-		          new Vector3(topEdgePosition[0].x * Width + coordinateOffset.x, 
-		            topEdgePosition[0].y + coordinateOffset.y, 
-		            topEdgePosition[0].z * Lentgh + coordinateOffset.z),
-		          new Vector2(0, 1));
+        AddVertex(ref meshData,
+                  topEdgePosition[0].Mult(Scale) + coordinateOffset,
+                  new Vector2(0, 1));
 		
 		AddVertex(ref meshData,
-		          new Vector3(topEdgePosition[1].x * Width + coordinateOffset.x, 
-		            topEdgePosition[1].y + coordinateOffset.y, 
-		            topEdgePosition[1].z * Lentgh + coordinateOffset.z),
-		          new Vector2(1, 1));
+                  topEdgePosition[1].Mult(Scale) + coordinateOffset,
+                  new Vector2(1, 1));
 		
 		AddVertex(ref meshData,
-		          new Vector3(bottomEdgePosition[0].x * Width + coordinateOffset.x, 
-		            bottomEdgePosition[0].y + coordinateOffset.y, 
-		            bottomEdgePosition[0].z * Lentgh + coordinateOffset.z),
+                  bottomEdgePosition[0].Mult(Scale) + coordinateOffset,
 		          new Vector2(0, uvBottomPosition));
 		
 		AddVertex(ref meshData,
-		          new Vector3(bottomEdgePosition[1].x * Width + coordinateOffset.x, 
-		            bottomEdgePosition[1].y + coordinateOffset.y, 
-		            bottomEdgePosition[1].z * Lentgh + coordinateOffset.z),
-		          new Vector2(1, uvBottomPosition));
+                  bottomEdgePosition[1].Mult(Scale) + coordinateOffset,
+                  new Vector2(1, uvBottomPosition));
 
 		// triangles
 		meshData.triangles[triangleIndex].Add(verticesOffset + sideTrianglesLookup[0, 0]);

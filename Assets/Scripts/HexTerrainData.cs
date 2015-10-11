@@ -23,7 +23,14 @@ public class HexTerrainData : ScriptableObject
 		set { hexagons[y * Width + x] = value; }
 	}
 
-	public bool IsInitialized
+    public Hexagon this[Vector2i location]
+    {
+        get { return hexagons[location.y * Width + location.x]; }
+        set { hexagons[location.y * Width + location.x] = value; }
+    }
+
+
+    public bool IsInitialized
 	{
 		get { return hexagons != null; }
 	}
