@@ -60,14 +60,14 @@ public class HexTerrainScriptEditor : Editor
 		{
 			// Catch window focus.
 			int controlID = GUIUtility.GetControlID(FocusType.Passive);
-			if (e.type == EventType.layout)
+			if (e.type == EventType.Layout)
 			{
 				HandleUtility.AddDefaultControl(controlID);
 				return;
 			}
 
 			// Release mouse
-			if (e.type == EventType.mouseUp && e.button == editMapButtonID)
+			if (e.type == EventType.MouseUp && e.button == editMapButtonID)
 				_isDragging = false;
 
 			// paint.
